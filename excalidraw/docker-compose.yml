@@ -1,0 +1,22 @@
+networks:
+  cloudflare_network:
+    external: true
+
+services:
+  # Excalidraw - Diagram drawing tool
+  excalidraw:
+    image: excalidraw/excalidraw:latest
+    container_name: excalidraw
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    ports:
+      - "127.0.0.1:3001:80"
+    volumes:
+      - excalidraw_data:/opt/node_app/build/data
+      - ../opt/excalidraw/drawings:/opt/node_app/build/drawings
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+
+volumes:
+  excalidraw_data:

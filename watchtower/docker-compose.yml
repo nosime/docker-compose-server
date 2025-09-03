@@ -1,0 +1,22 @@
+networks:
+  cloudflare_network:
+    external: true
+
+services:
+  # Watchtower - Auto update containers
+  watchtower:
+    image: containrrr/watchtower:arm64v8-latest
+    container_name: watchtower
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400 # Check daily
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=false
+    # Updated to include all services
+    command: --interval 86400 --cleanup openwebui excalidraw portainer affine docmost cloudflared

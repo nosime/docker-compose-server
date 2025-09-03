@@ -1,0 +1,21 @@
+networks:
+  cloudflare_network:
+    external: true
+
+services:
+  # Portainer - Chỉ qua Cloudflare tunnel  
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    ports:
+      - "127.0.0.1:9443:9443"
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  portainer_data:

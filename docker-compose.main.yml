@@ -1,0 +1,117 @@
+# Main docker-compose file to orchestrate all services
+# Run with: docker-compose up -d
+# This will start all services in the correct order
+
+networks:
+  cloudflare_network:
+    driver: bridge
+
+services:
+  # Import all services from individual compose files
+  # Start with network infrastructure first
+  cloudflared:
+    extends:
+      file: ./cloudflared/docker-compose.yml
+      service: cloudflared
+
+  # Then start independent services
+  portainer:
+    extends:
+      file: ./portainer/docker-compose.yml
+      service: portainer
+    depends_on:
+      - cloudflared
+
+  excalidraw:
+    extends:
+      file: ./excalidraw/docker-compose.yml
+      service: excalidraw
+    depends_on:
+      - cloudflared
+
+  openwebui:
+    extends:
+      file: ./openwebui/docker-compose.yml
+      service: openwebui
+    depends_on:
+      - cloudflared
+
+  # Database services for AFFiNE
+  affine_postgres:
+    extends:
+      file: ./affine/docker-compose.yml
+      service: postgres
+    depends_on:
+      - cloudflared
+
+  affine_redis:
+    extends:
+      file: ./affine/docker-compose.yml
+      service: redis
+    depends_on:
+      - cloudflared
+
+  # AFFiNE migration and main service
+  affine_migration:
+    extends:
+      file: ./affine/docker-compose.yml
+      service: affine_migration
+    depends_on:
+      affine_postgres:
+        condition: service_healthy
+      affine_redis:
+        condition: service_healthy
+
+  affine:
+    extends:
+      file: ./affine/docker-compose.yml
+      service: affine
+    depends_on:
+      affine_redis:
+        condition: service_healthy
+      affine_postgres:
+        condition: service_healthy
+      affine_migration:
+        condition: service_completed_successfully
+
+  # Database services for Docmost
+  docmost_postgres:
+    extends:
+      file: ./docmost/docker-compose.yml
+      service: docmost_postgres
+    depends_on:
+      - cloudflared
+
+  docmost_redis:
+    extends:
+      file: ./docmost/docker-compose.yml
+      service: docmost_redis
+    depends_on:
+      - cloudflared
+
+  # Docmost main service
+  docmost:
+    extends:
+      file: ./docmost/docker-compose.yml
+      service: docmost
+    depends_on:
+      docmost_postgres:
+        condition: service_healthy
+      docmost_redis:
+        condition: service_healthy
+
+  # Monitoring service
+  watchtower:
+    extends:
+      file: ./watchtower/docker-compose.yml
+      service: watchtower
+    depends_on:
+      - cloudflared
+
+volumes:
+  portainer_data:
+  excalidraw_data:
+  affine_postgres_data:
+  affine_redis_data:
+  docmost_postgres_data:
+  docmost_redis_data:

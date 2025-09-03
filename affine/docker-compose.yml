@@ -1,0 +1,103 @@
+networks:
+  cloudflare_network:
+    external: true
+
+services:
+  # AFFiNE PostgreSQL Database (with pgvector support)
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: affine_postgres
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    volumes:
+      - affine_postgres_data:/var/lib/postgresql/data
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - POSTGRES_USER=affine
+      - POSTGRES_PASSWORD=A7j9K2m5N8p1Q4r7S0t3V6x9Z2b5C8f1G4h7J0k3M6n9P2q5R8s1T4v7W0z3
+      - POSTGRES_DB=affine
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'affine', '-d', 'affine']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # AFFiNE Redis Cache
+  redis:
+    image: redis
+    container_name: affine_redis
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    volumes:
+      - affine_redis_data:/data
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # AFFiNE Migration Job
+  affine_migration:
+    image: ghcr.io/toeverything/affine:stable
+    container_name: affine_migration_job
+    restart: "no"
+    networks:
+      - cloudflare_network
+    volumes:
+      - ../opt/affine/storage:/root/.affine/storage
+      - ../opt/affine/config:/root/.affine/config
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - REDIS_SERVER_HOST=redis
+      - DATABASE_URL=postgresql://affine:A7j9K2m5N8p1Q4r7S0t3V6x9Z2b5C8f1G4h7J0k3M6n9P2q5R8s1T4v7W0z3@postgres:5432/affine
+      - AFFINE_INDEXER_ENABLED=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
+
+  # AFFiNE Main Server - Knowledge base platform (Notion + Miro alternative)
+  affine:
+    image: ghcr.io/toeverything/affine:stable
+    container_name: affine_server
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    ports:
+      - "127.0.0.1:3010:3010"
+    volumes:
+      - ../opt/affine/storage:/root/.affine/storage
+      - ../opt/affine/config:/root/.affine/config
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - REDIS_SERVER_HOST=redis
+      - DATABASE_URL=postgresql://affine:A7j9K2m5N8p1Q4r7S0t3V6x9Z2b5C8f1G4h7J0k3M6n9P2q5R8s1T4v7W0z3@postgres:5432/affine
+      - AFFINE_INDEXER_ENABLED=false
+      - NODE_ENV=production
+      - AFFINE_SERVER_EXTERNAL_URL=https://affine.nosime.org
+      # Optional: Email configuration
+      - MAILER_HOST=smtp.gmail.com
+      - MAILER_PORT=587
+      - MAILER_SECURE=true
+      - MAILER_USER=nosime404@gmail.com
+      - MAILER_PASSWORD=uguqajmcforunxda
+      - MAILER_SENDER=AFFiNE - Nosime <noreply@nosime.org> 
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      affine_migration:
+        condition: service_completed_successfully
+
+volumes:
+  affine_postgres_data:
+  affine_redis_data:

@@ -1,0 +1,65 @@
+# ===== ENVIRONMENT FILES =====
+.env
+*.env.local
+*.env.production
+
+# ===== DATA DIRECTORIES =====
+data/
+!data/.gitkeep
+
+# ===== BACKUP FILES =====
+backups/
+*.backup
+*.tar.gz
+*.zip
+
+# ===== LOG FILES =====
+logs/
+*.log
+*.log.*
+
+# ===== TEMPORARY FILES =====
+temp/
+tmp/
+*.tmp
+*.temp
+
+# ===== OS GENERATED FILES =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ===== EDITOR FILES =====
+.vscode/
+.idea/
+*.sublime-*
+
+# ===== NODE MODULES (nếu có) =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== DOCKER VOLUMES (local) =====
+volumes/
+
+# ===== SCRIPTS TEMPORARY =====
+*.ps1.bak
+*.sh.bak
+
+# ===== CERTIFICATES =====
+*.key
+*.crt
+*.pem
+*.p12
+
+# ===== SENSITIVE CONFIG =====
+secrets/
+certificates/

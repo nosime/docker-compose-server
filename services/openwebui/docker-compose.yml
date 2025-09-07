@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: openwebui
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    ports:
+      - "127.0.0.1:3000:8080"
+    volumes:
+      - ../../data/openwebui:/app/backend/data
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    environment:
+      - WEBUI_SECRET_KEY=${OPENWEBUI_SECRET_KEY}
+    profiles:
+      - all
+      - openwebui
+
+networks:
+  cloudflare_network:
+    external: true

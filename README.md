@@ -1,149 +1,280 @@
-# Docker Compose Server Setup
+# Docker Compose Server Stack
 
-Cấu trúc thư mục đã được tách riêng cho từng ứng dụng để dễ quản lý và bảo trì.
+Modern containerized server stack với Docker Compose, Profiles và Global Environment management.
 
-## Cấu trúc thư mục
+## 🏗️ Kiến trúc
 
 ```
-docker-compose-server/
-├── affine/                 # AFFiNE workspace với PostgreSQL & Redis
-│   └── docker-compose.yml
-├── cloudflared/           # Cloudflare Tunnel
-│   └── docker-compose.yml
-├── docmost/               # Docmost documentation với PostgreSQL & Redis
-│   └── docker-compose.yml
-├── excalidraw/            # Excalidraw diagram tool
-│   └── docker-compose.yml
-├── openwebui/             # OpenWebUI interface
-│   └── docker-compose.yml
-├── portainer/             # Portainer Docker management
-│   └── docker-compose.yml
-├── watchtower/            # Watchtower auto-update
-│   └── docker-compose.yml
-├── opt/                   # Data volumes và persistent storage
-│   ├── affine/
-│   │   ├── config/
-│   │   └── storage/
-│   ├── docmost/
-│   │   ├── data/
-│   │   └── uploads/
-│   ├── excalidraw/
-│   │   └── drawings/
-│   └── openwebui/
-│       └── data/
-├── docker-compose.yml     # File compose gốc (có thể giữ lại)
-├── docker-compose.main.yml # File compose tổng để start tất cả
-└── README.md
+project-root/
+├── docker-compose.yml          # Main compose với profiles
+├── .env                        # Global environment variables
+├── .env.example               # Template cho .env
+├── services/                  # Service configurations
+│   ├── cloudflared/           # Cloudflare Tunnel
+│   ├── watchtower/           # Auto-update containers  
+│   ├── portainer/            # Docker management UI
+│   ├── openwebui/            # AI chat interface
+│   ├── excalidraw/           # Drawing tool
+│   ├── affine/               # Productivity suite (Notion alternative)
+│   └── docmost/              # Documentation platform
+├── data/                     # Persistent data storage
+└── shared/                   # Shared configurations
 ```
 
-## Cách sử dụng
+## �� Services
 
-### 1. Chạy tất cả services cùng lúc
+| Service | Purpose | URL | Profile |
+|---------|---------|-----|---------|
+| **Cloudflared** | Secure tunnel | - | `cloudflared` |
+| **Watchtower** | Auto-update containers | - | `watchtower` |
+| **Portainer** | Docker management | `:9443` | `portainer` |
+| **OpenWebUI** | AI chat interface | `:3000` | `openwebui` |
+| **Excalidraw** | Drawing tool | `:3001` | `excalidraw` |
+| **AFFiNE** | Productivity suite | `:3010` | `affine` |
+| **Docmost** | Documentation | `:3009` | `docmost` |
+
+## ⚡ Quick Start
+
+### 1. Clone và Setup
+```bash
+git clone <repo-url>
+cd docker-compose-server
+
+# Copy environment template
+cp .env.example .env
+
+# Edit với thông tin thực tế của bạn
+nano .env
+```
+
+### 2. Tạo Network
+```bash
+docker network create cloudflare_network
+```
+
+### 3. Start Services
 
 ```bash
-docker-compose -f docker-compose.main.yml up -d
+# Tất cả services
+docker compose --profile all up -d
+
+# Chỉ một service
+docker compose --profile cloudflared up -d
+docker compose --profile openwebui up -d
+
+# Nhiều services
+docker compose --profile cloudflared --profile portainer --profile openwebui up -d
 ```
 
-### 2. Chạy từng service riêng biệt
+## 🎯 Profiles
 
-#### Cloudflared (Chạy đầu tiên để tạo network)
+| Profile | Services | Use Case |
+|---------|----------|----------|
+| `all` | Tất cả services | Production deployment |
+| `cloudflared` | Cloudflare Tunnel | Secure access |
+| `watchtower` | Auto-updater | Maintenance |
+| `portainer` | Docker UI | Management |
+| `openwebui` | AI interface | AI workloads |
+| `excalidraw` | Drawing tool | Diagrams |
+| `affine` | Productivity stack | Knowledge management |
+| `docmost` | Documentation stack | Team docs |
+
+## 📋 Management Commands
+
+### Service Management
+```bash
+# Start specific services
+docker compose --profile affine up -d
+docker compose --profile openwebui up -d
+
+# Stop services  
+docker compose --profile affine down
+docker compose --profile all down
+
+# View logs
+docker compose --profile affine logs -f
+docker compose --profile openwebui logs -f
+
+# Check status
+docker compose --profile all ps
+```
+
+### Maintenance
+```bash
+# Pull latest images
+docker compose --profile all pull
+
+# Restart services
+docker compose --profile all restart
+
+# Clean up
+docker system prune -f
+docker volume prune -f
+```
+
+## 🔧 Configuration
+
+### Global Environment Variables
+File `.env` chứa cấu hình chung cho tất cả services:
 
 ```bash
-cd cloudflared
-docker-compose up -d
+# Project
+TZ=Asia/Ho_Chi_Minh
+COMPOSE_PROJECT_NAME=your_project
+
+# Cloudflare
+CLOUDFLARE_TOKEN=your_token
+
+# Domains
+AFFINE_DOMAIN=https://affine.your-domain.com
+DOCMOST_DOMAIN=https://docmost.your-domain.com
+
+# Email (shared)
+MAIL_HOST=smtp.gmail.com
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=your_app_password
+
+# Database passwords
+AFFINE_POSTGRES_PASSWORD=strong_password
+DOCMOST_POSTGRES_PASSWORD=strong_password
 ```
 
-#### OpenWebUI
+### Service-Specific Configuration
+Mỗi service có file `.env` riêng trong thư mục `services/{service_name}/`:
 
+- **Global env** (priority thấp): `../../.env`  
+- **Service env** (override): `.env`
+
+## 📊 Monitoring
+
+### Health Checks
 ```bash
-cd openwebui
-docker-compose up -d
+# Check running containers
+docker ps
+
+# View resource usage
+docker stats
+
+# Check logs
+docker compose logs -f [service_name]
 ```
 
-#### Portainer
+### Service URLs (Local)
+- Portainer: http://localhost:9443
+- OpenWebUI: http://localhost:3000  
+- Excalidraw: http://localhost:3001
+- AFFiNE: http://localhost:3010
+- Docmost: http://localhost:3009
 
+## �� Security
+
+### Environment Protection
+- File `.env` chứa thông tin nhạy cảm → **KHÔNG commit**
+- Sử dụng `.env.example` làm template
+- Passwords và tokens được centralized
+
+### Network Security
+- Tất cả services trong `cloudflare_network`
+- External access qua Cloudflare Tunnel
+- Local binding: `127.0.0.1` only
+
+## 🛠️ Development
+
+### Adding New Service
+1. Tạo thư mục `services/new-service/`
+2. Tạo `docker-compose.yml` với profiles
+3. Tạo `.env` với config đặc biệt
+4. Thêm vào main `docker-compose.yml`
+5. Cập nhật global `.env` nếu cần
+
+### Example Service Template
+```yaml
+version: '3.8'
+
+services:
+  new-service:
+    image: nginx:latest
+    container_name: new_service
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    env_file:
+      - ../../.env      # Global env
+      - .env            # Service env
+    profiles:
+      - all
+      - new-service
+
+networks:
+  cloudflare_network:
+    external: true
+```
+
+## 📦 Backup & Restore
+
+### Backup Data
 ```bash
-cd portainer
-docker-compose up -d
+# Backup tất cả data
+tar -czf backup_$(date +%Y%m%d).tar.gz data/
+
+# Backup specific service
+tar -czf affine_backup_$(date +%Y%m%d).tar.gz data/affine/
 ```
 
-#### Excalidraw
-
+### Restore Data
 ```bash
-cd excalidraw
-docker-compose up -d
+# Stop services
+docker compose --profile all down
+
+# Restore data
+tar -xzf backup_20241201.tar.gz
+
+# Start services
+docker compose --profile all up -d
 ```
 
-#### AFFiNE (bao gồm PostgreSQL, Redis, Migration và Main Server)
+## 🐛 Troubleshooting
 
+### Common Issues
+
+**Network errors:**
 ```bash
-cd affine
-docker-compose up -d
+docker network create cloudflare_network
 ```
 
-#### Docmost (bao gồm PostgreSQL, Redis và Main Server)
-
+**Permission errors:**
 ```bash
-cd docmost
-docker-compose up -d
+sudo chown -R 1000:1000 data/
 ```
 
-#### Watchtower
-
+**Config validation:**
 ```bash
-cd watchtower
-docker-compose up -d
+docker compose config
 ```
 
-### 3. Quản lý services
-
-#### Xem logs của một service cụ thể
-
+**Service won't start:**
 ```bash
-cd <service-folder>
-docker-compose logs -f
+docker compose --profile service_name logs
 ```
 
-#### Stop một service
+## 📚 References
 
-```bash
-cd <service-folder>
-docker-compose down
-```
+- [Docker Compose](https://docs.docker.com/compose/)
+- [Docker Profiles](https://docs.docker.com/compose/profiles/)
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
 
-#### Update một service
+## 📄 License
 
-```bash
-cd <service-folder>
-docker-compose pull
-docker-compose up -d
-```
+MIT License - see [LICENSE](LICENSE) file for details.
 
-### 4. Quản lý volumes và data
+## 🤝 Contributing
 
-Tất cả dữ liệu persistent được lưu trong thư mục `opt/`:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- `opt/openwebui/data/` - Dữ liệu OpenWebUI
-- `opt/excalidraw/drawings/` - Drawings của Excalidraw
-- `opt/affine/storage/` và `opt/affine/config/` - Dữ liệu AFFiNE
-- `opt/docmost/data/` và `opt/docmost/uploads/` - Dữ liệu Docmost
+---
 
-## URLs truy cập
-
-- OpenWebUI: http://localhost:3000 hoặc https://openwebui.nosime.org
-- Portainer: https://localhost:9443 hoặc https://portainer.nosime.org
-- Excalidraw: http://localhost:3001 hoặc https://excalidraw.nosime.org
-- AFFiNE: http://localhost:3010 hoặc https://affine.nosime.org
-- Docmost: http://localhost:3009 hoặc https://docmost.nosime.org
-
-## Lưu ý
-
-1. **Network**: Tất cả services sử dụng network `cloudflare_network`. Cloudflared tạo network này, các service khác kết nối vào network external.
-
-2. **Dependencies**: Các service database (PostgreSQL, Redis) phải healthy trước khi main application start.
-
-3. **Volumes**: Host volumes được mount từ thư mục `opt/` để dễ backup và quản lý.
-
-4. **Security**: Tất cả services chỉ bind vào 127.0.0.1, chỉ truy cập được qua Cloudflare tunnel.
-
-5. **Watchtower**: Tự động update containers hàng ngày lúc 86400 giây (24h).
+**⚠️ Important:** Luôn backup data trước khi update hoặc thay đổi cấu hình!

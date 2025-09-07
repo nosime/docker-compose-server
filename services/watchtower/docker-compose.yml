@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  watchtower:
+    image: containrrr/watchtower:arm64v8-latest
+    container_name: watchtower
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    command: --interval ${WATCHTOWER_POLL_INTERVAL} --cleanup openwebui excalidraw portainer affine docmost cloudflared
+    profiles:
+      - all
+      - watchtower
+
+networks:
+  cloudflare_network:
+    external: true

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
+    profiles:
+      - all
+      - cloudflared
+
+networks:
+  cloudflare_network:
+    external: true

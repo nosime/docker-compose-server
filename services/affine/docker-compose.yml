@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # AFFiNE PostgreSQL Database
+  affine_postgres:
+    image: pgvector/pgvector:pg16
+    container_name: affine_postgres
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    volumes:
+      - ../../data/affine/postgres:/var/lib/postgresql/data
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    environment:
+      - POSTGRES_PASSWORD=${AFFINE_POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', '${POSTGRES_USER}', '-d', '${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - all
+      - affine
+
+  # AFFiNE Redis Cache
+  affine_redis:
+    image: redis
+    container_name: affine_redis
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    volumes:
+      - ../../data/affine/redis:/data
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - all
+      - affine
+
+  # AFFiNE Migration Job
+  affine_migration:
+    image: ghcr.io/toeverything/affine:stable
+    container_name: affine_migration_job
+    restart: "no"
+    networks:
+      - cloudflare_network
+    volumes:
+      - ../../data/affine/storage:/root/.affine/storage
+      - ../../data/affine/config:/root/.affine/config
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    depends_on:
+      affine_postgres:
+        condition: service_healthy
+      affine_redis:
+        condition: service_healthy
+    command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
+    profiles:
+      - all
+      - affine
+
+  # AFFiNE Main Server
+  affine:
+    image: ghcr.io/toeverything/affine:stable
+    container_name: affine_server
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    ports:
+      - "127.0.0.1:3010:3010"
+    volumes:
+      - ../../data/affine/storage:/root/.affine/storage
+      - ../../data/affine/config:/root/.affine/config
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    depends_on:
+      affine_redis:
+        condition: service_healthy
+      affine_postgres:
+        condition: service_healthy
+      affine_migration:
+        condition: service_completed_successfully
+    profiles:
+      - all
+      - affine
+
+networks:
+  cloudflare_network:
+    external: true

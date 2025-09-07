@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  excalidraw:
+    image: excalidraw/excalidraw:latest
+    container_name: excalidraw
+    restart: unless-stopped
+    networks:
+      - cloudflare_network
+    ports:
+      - "127.0.0.1:3001:80"
+    volumes:
+      - ../../data/excalidraw/data:/opt/node_app/build/data
+      - ../../data/excalidraw/drawings:/opt/node_app/build/drawings
+    env_file:
+      - ../../.env      # Global env (priority thấp)
+      - .env            # Service env (override global)
+    profiles:
+      - all
+      - excalidraw
+
+networks:
+  cloudflare_network:
+    external: true

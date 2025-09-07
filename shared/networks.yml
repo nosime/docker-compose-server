@@ -1,0 +1,12 @@
+version: '3.8'
+
+# Shared network configuration
+# File này để tham khảo hoặc dùng cho override
+networks:
+  cloudflare_network:
+    name: cloudflare_network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1

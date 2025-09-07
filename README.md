@@ -10,7 +10,7 @@ Modern containerized server stack with modular architecture, Docker Compose Prof
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/docker-compose-server.git
+git clone https://github.com/nosime/docker-compose-server.git
 cd docker-compose-server
 
 # Setup environment

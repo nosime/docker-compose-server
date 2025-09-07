@@ -1,4 +1,3 @@
-version: '3.8'
 
 # Include all service compose files
 include:

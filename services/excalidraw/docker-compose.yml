@@ -18,7 +18,3 @@ services:
     profiles:
       - all
       - excalidraw
-
-networks:
-  cloudflare_network:
-    external: true

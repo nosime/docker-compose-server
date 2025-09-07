@@ -17,6 +17,3 @@ services:
       - all
       - watchtower
 
-networks:
-  cloudflare_network:
-    external: true

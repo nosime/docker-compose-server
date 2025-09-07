@@ -19,7 +19,3 @@ services:
     profiles:
       - all
       - portainer
-
-networks:
-  cloudflare_network:
-    external: true

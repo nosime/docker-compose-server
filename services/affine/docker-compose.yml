@@ -95,7 +95,3 @@ services:
     profiles:
       - all
       - affine
-
-networks:
-  cloudflare_network:
-    external: true

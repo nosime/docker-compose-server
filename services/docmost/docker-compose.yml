@@ -78,7 +78,3 @@ services:
     profiles:
       - all
       - docmost
-
-networks:
-  cloudflare_network:
-    external: true

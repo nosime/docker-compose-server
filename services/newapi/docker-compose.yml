@@ -1,19 +1,17 @@
 services:
   new-api:
-    image: nosime/new-api:latest-arm64 
+    #build:
+    #  context: .
+    #  dockerfile: Dockerfile
+    image: nosime/new-api:arm64
     container_name: new-api
     restart: always
     command: --log-dir /app/logs
-    networks:
-      - cloudflare_network
     ports:
       - "3000:3000"
     volumes:
       - ../../data/newapi/data:/data
       - ../../data/newapi/logs:/app/logs
-    env_file:
-      - ../../.env      # Global env (priority thấp)
-      - .env            # Service env (override global)
     environment:
       - SQL_DSN=root:123456@tcp(mysql:3306)/new-api  # Point to the mysql service
       - REDIS_CONN_STRING=redis://redis
@@ -24,6 +22,7 @@ services:
     #      - NODE_TYPE=slave  # Uncomment for slave node in multi-node deployment
     #      - SYNC_FREQUENCY=60  # Uncomment if regular database syncing is needed
     #      - FRONTEND_BASE_URL=https://openai.justsong.cn  # Uncomment for multi-node deployment with front-end URL
+
     depends_on:
       - redis
       - mysql
@@ -32,13 +31,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - cloudflare_network
     profiles:
       - all
       - new-api
 
   redis:
     image: redis:latest
-    container_name: newapi_redis
+    container_name: redis
     restart: always
     networks:
       - cloudflare_network
@@ -48,7 +49,7 @@ services:
 
   mysql:
     image: mysql:8.2
-    container_name: newapi_mysql
+    container_name: mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 123456  # Ensure this matches the password in SQL_DSN

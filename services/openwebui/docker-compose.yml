@@ -7,7 +7,7 @@ services:
     networks:
       - cloudflare_network
     ports:
-      - "127.0.0.1:3000:8080"
+      - "127.0.0.1:3030:8080"
     volumes:
       - ../../data/openwebui:/app/backend/data
     env_file:

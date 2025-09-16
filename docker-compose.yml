@@ -8,6 +8,7 @@ include:
   - ./services/excalidraw/docker-compose.yml
   - ./services/affine/docker-compose.yml
   - ./services/docmost/docker-compose.yml
+  - ./services/new-api/docker-compose.yml
 
 # Global networks definition - tạo network chính ở đây
 networks:

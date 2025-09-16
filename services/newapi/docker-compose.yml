@@ -1,6 +1,6 @@
 services:
   new-api:
-    image: nosime/new-api:latest 
+    image: nosime/new-api:latest-arm64 
     container_name: new-api
     restart: always
     command: --log-dir /app/logs
